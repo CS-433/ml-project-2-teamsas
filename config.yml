@@ -1,0 +1,32 @@
+target_vars:
+  - "age"
+  - "hello"
+model:
+  backbone: "big-bert"
+  name: "multi-reg"
+  arch:
+    non_linearity: "relu"
+    hidden_layers:
+      - 100
+      - 50
+# model:
+#   name: "multi-reg-joint-emb"
+#   arch:
+#     shared_layers:
+#       - 100
+#       - 50
+#     independent_layers:
+#       - 20
+#       - 15
+training:
+  validation_split: 0.8
+  num_epochs: 100
+  batch_size: 16
+  criterion: "mse"
+  optimizer:
+    name: "adam"
+    learning_rate: 0.001
+  early_stopping:
+    monitor: "mse"
+    patience: 5
+  checkpoint_frequency: 10

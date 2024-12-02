@@ -79,40 +79,28 @@ def main() -> None:
         help="activate noise injection augmentation method.",
     )
     parser.add_argument(
-        "--char_insert_aug",
+        "--char_insert_aug_p",
         type=float,
         required=False,
         default=0.0,
         help="probability of char insert augmentation.",
     )
     parser.add_argument(
-        "--ocr_aug",
+        "--ocr_aug_p",
         type=float,
         required=False,
         default=0.0,
         help="probability of ocr augmentation.",
     )
     parser.add_argument(
-        "--word_swapping_aug",
+        "--word_swapping_aug_p",
         type=float,
         required=False,
         default=0.0,
         help="probability of word swapping augmentation.",
     )
-    parser.add_argument(
-        "--word_deleting_aug",
-        type=float,
-        required=False,
-        default=0.0,
-        help="probability of word deleting augmentation.",
-    )
 
     # NOTE: parameters for tf_idf_based method
-    parser.add_argument(
-        "--tf_idf_based",
-        action="store_true",
-        help="activate tf-idf augmentation method.",
-    )
     parser.add_argument(
         "--tf_idf_dropping_p",
         type=float,
@@ -125,7 +113,7 @@ def main() -> None:
         type=float,
         required=False,
         default=0.0,
-        help="probability of masking augmentation.",
+        help="probability of replacing with tf_idf synonym.",
     )
     parser.add_argument(
         "--target_corpus",
