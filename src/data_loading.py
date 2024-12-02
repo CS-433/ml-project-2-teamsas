@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 import torch.utils.data
@@ -7,13 +7,15 @@ import torch.utils.data
 class PersonalityDataset(torch.utils.data.Dataset):
     def __init__(
         self,
+        tokenized_texts: Dict[str, torch.Tensor],
         target_vars: torch.Tensor,
-        texts: List[List[str]],  # TODO: tokenized texts
     ) -> None:
-        assert len(target_vars) == len(texts), "inconsistent lengths."
+        assert len(tokenized_texts) > 0, "no tokenized texts."
+        for k in tokenized_texts.keys():
+            assert len(tokenized_texts[k]) == len(target_vars), "inconsistent lengths."
         self.num_samples = len(target_vars)
+        self.tokenized_texts = tokenized_texts
         self.target_vars = target_vars
-        self.texts = texts
         self.normalization_params = None
 
     def normalize_targets(
@@ -37,21 +39,24 @@ class PersonalityDataset(torch.utils.data.Dataset):
         return self.num_samples
 
     def __getitem__(self, idx: int) -> torch.Tensor:
-        if self.side_features is not None:
-            return self.texts[idx], self.side_features[idx], self.target_vars[idx]
-        return self.texts[idx], self.target_vars[idx]
+        tokenized_texts_idx = {k: t[idx] for k, t in self.tokenized_texts.items()}
+        return tokenized_texts_idx, self.target_vars[idx]
 
 
 def train_test_split(
-    dataset: PersonalityDataset, ratio: float, shuffle: bool = True
+    dataset: PersonalityDataset, ratio: float
 ) -> Tuple[PersonalityDataset, PersonalityDataset]:
     num_samples = len(dataset)
-    indices = list(range(num_samples))
-    if shuffle:
-        torch.random.shuffle(indices)
+    indices = torch.randperm(num_samples)
     split_idx = int(num_samples * ratio)
     train_indices = indices[:split_idx]
     test_indices = indices[split_idx:]
-    train_dataset = torch.utils.data.Subset(dataset, train_indices)
-    test_dataset = torch.utils.data.Subset(dataset, test_indices)
+    train_dataset = PersonalityDataset(
+        {k: v[train_indices] for k, v in dataset.tokenized_texts.items()},
+        dataset.target_vars[train_indices],
+    )
+    test_dataset = PersonalityDataset(
+        {k: v[test_indices] for k, v in dataset.tokenized_texts.items()},
+        dataset.target_vars[test_indices],
+    )
     return train_dataset, test_dataset

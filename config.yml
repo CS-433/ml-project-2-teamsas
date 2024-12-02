@@ -1,8 +1,13 @@
 target_vars:
-  - "age"
-  - "hello"
+  - "hones16"
+  - "emoti16"
+  - "extra16"
+  - "agree16"
+  - "consc16"
+  - "openn16"
 model:
-  backbone: "big-bert"
+  backbone: "big-bird-roberta-base"
+  backbone_aggregation: "cls"
   name: "multi-reg"
   arch:
     non_linearity: "relu"
@@ -21,7 +26,7 @@ model:
 training:
   validation_split: 0.8
   num_epochs: 100
-  batch_size: 16
+  batch_size: 8
   criterion: "mse"
   optimizer:
     name: "adam"

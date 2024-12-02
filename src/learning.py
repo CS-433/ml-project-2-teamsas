@@ -3,6 +3,7 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 
 
 class Trainer(object):
@@ -10,9 +11,9 @@ class Trainer(object):
         self,
         model: nn.Module,
         optimizer: torch.optim.Optimizer,
-        criterion: torch.nn._Loss,
+        criterion: torch.nn.Module,
         train_loader: torch.utils.data.DataLoader,
-        val_loader: torch.utils.data,
+        val_loader: torch.utils.data.DataLoader,
         num_epochs: int,
         early_stopping_monitor: Optional[str],
         early_stopping_patience: Optional[int],
@@ -42,8 +43,8 @@ class Trainer(object):
 
     def _train_epoch(self):
         model = self.model.train()
-        for data, target in self.train_loader:
-            data, target = data.to(self.device), target.to(self.device)
+        for data, target in tqdm(self.train_loader):
+            data, target = data, target.to(self.device)
             self.optimizer.zero_grad()
             output = model(data)
             loss = self.criterion(output, target)
@@ -56,8 +57,9 @@ class Trainer(object):
         sum_squared_error = 0
         num_samples = 0
         with torch.no_grad():
-            for data, target in data_loader:
+            for data, target in tqdm(data_loader):
                 data, target = data.to(self.device), target.to(self.device)
+                data = {k: v.to(self.device) for k, v in data.items()}
                 output = model(data)
                 sum_abs_error += torch.sum(torch.abs(output - target)).item()
                 sum_squared_error += torch.sum((output - target) ** 2).item()
@@ -87,7 +89,7 @@ class Trainer(object):
         best_measurement = float("inf")
         best_epoch = 0
 
-        for epoch in range(self.num_epochs):
+        for epoch in tqdm(range(self.num_epochs)):
             self._train_epoch()
             train_metrics = self._validate_epoch(self.train_loader)
             val_metrics = self._validate_epoch(self.val_loader)

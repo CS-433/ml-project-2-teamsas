@@ -1,16 +1,77 @@
-from typing import List
+import os
+from typing import List, Union
 
 import torch
 import torch.nn as nn
 
+from transformers import PreTrainedTokenizer, PreTrainedModel
+from transformers import BigBirdTokenizer, BigBirdModel
+
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 
 class LanguageModel(torch.nn.Module):
-    # TODO: for finetune
-    def tokenize(self, text: List[str]) -> List[List[int]]:
-        pass
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
-    def forward(self) -> torch.Tensor:
-        pass
+
+class BertLanguageModel(LanguageModel):
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizer,
+        model: PreTrainedModel,
+        max_length: int,
+        aggregation: str,
+        device: torch.device,
+    ) -> None:
+        super().__init__()
+        self.tokenizer = tokenizer
+        self.model = model.to(device)
+        self.max_length = max_length
+        self.aggregation = aggregation
+        self.device = device
+
+    def tokenize(self, texts: Union[str, List[str]]) -> List[List[int]]:
+        return self.tokenizer(
+            texts,
+            return_tensors="pt",
+            max_length=self.max_length,
+            truncation=True,
+            add_special_tokens=True,
+            padding="max_length",
+        )
+
+    def forward(self, inputs) -> torch.Tensor:
+        inputs = {key: value.to(self.device) for key, value in inputs.items()}
+        with torch.no_grad():  # TODO
+            outputs = self.model(**inputs)
+            last_hidden_state = outputs.last_hidden_state
+            if self.aggregation == "mean":
+                # TODO
+                embeddings = last_hidden_state.mean(dim=1)
+            elif self.aggregation == "cls":
+                embeddings = last_hidden_state[:, 0, :]
+            # batch_avg_embeddings = (last_hidden_state * attention_mask.unsqueeze(-1)).sum(
+            #     dim=1
+            # ) / attention_mask.sum(dim=1).unsqueeze(-1)
+        return embeddings
+
+
+class BigBirdRobertaBase(BertLanguageModel):
+    def __init__(
+        self,
+        aggregation: str,
+        device: torch.device,
+    ) -> None:
+        super().__init__(
+            tokenizer=BigBirdTokenizer.from_pretrained("google/bigbird-roberta-base"),
+            model=BigBirdModel.from_pretrained("google/bigbird-roberta-base"),
+            max_length=4096,
+            aggregation=aggregation,
+            device=device,
+        )
+        self.output_dim = 768
 
 
 class Architecture(torch.nn.Module):
@@ -133,14 +194,17 @@ class MultiRegressionWithJointEncoderArchitecture(Architecture):
         return x
 
 
-class TextOnlyModel(object):
+class TextOnlyModel(torch.nn.Module):
     def __init__(
         self,
         embedding_generation: LanguageModel,
         regression_model: Architecture,
+        device: torch.device,
     ) -> None:
+        super().__init__()
         self.embedding_generation = embedding_generation
         self.regression_model = regression_model
+        self.device = device
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.regression_model(self.embedding_generation(x))

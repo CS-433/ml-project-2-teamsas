@@ -1,10 +1,12 @@
 import argparse
+import math
 from pathlib import Path
 import yaml
 
 import numpy as np
 import pandas as pd
 import torch
+from tqdm import tqdm
 
 from src import data_loading
 from src import learning
@@ -18,7 +20,7 @@ MODELS = [
 ]
 
 BACKBONES = [
-    "bert",
+    "big-bird-roberta-base",
 ]
 
 NON_LINS = [
@@ -70,7 +72,7 @@ def main() -> None:
     input_path = args.data
     assert input_path.exists(), f"{input_path} does not exist."
     assert input_path.is_file(), f"{input_path} is not a file."
-    assert input_path.suffix == ".csv", f"{input_path} is not a csv file."
+    assert input_path.suffix in [".csv", ".xlsx"], f"{input_path} is not a csv file."
 
     config_path = args.config
     assert config_path.exists(), f"{config_path} does not exist."
@@ -85,41 +87,47 @@ def main() -> None:
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
-    target_vars = config["target_vars"]
-    assert isinstance(target_vars, list), "target_vars should be a list."
-    assert len(target_vars) > 0, "target_vars should not be empty."
+    target_vars_names = config["target_vars"]
+    assert isinstance(target_vars_names, list), "target_vars should be a list."
+    assert len(target_vars_names) > 0, "target_vars should not be empty."
 
     model_config = config["model"]
     backbone_name = model_config["backbone"]
+    backbone_aggregation = model_config["backbone_aggregation"]
     assert backbone_name in BACKBONES, f"{backbone_name} is not a valid backbone."
-    model_name = model_config["model"]
+    model_name = model_config["name"]
     assert model_name in MODELS, f"{model_name} is not a valid model."
-    non_lin_name = model_config["arch"]["non_lin"]
+    non_lin_name = model_config["arch"]["non_linearity"]
     assert non_lin_name in NON_LINS, f"{non_lin_name} is not a valid non-linearity."
 
-    validation_split = model_config["training"]["validation_ratio"]
-    assert 0 < validation_split < 1, "validation_ratio should be in (0, 1)."
+    validation_split = config["training"]["validation_split"]
+    assert 0 < validation_split < 1, "validation_split should be in (0, 1)."
 
-    num_epochs = model_config["training"]["num_epochs"]
+    num_epochs = config["training"]["num_epochs"]
     assert num_epochs > 0, "num_epochs should be positive."
 
-    batch_size = model_config["training"]["batch_size"]
+    batch_size = config["training"]["batch_size"]
     assert batch_size > 0, "batch_size should be positive."
 
-    criterion_name = model_config["training"]["criterion"]
+    criterion_name = config["training"]["criterion"]
     assert criterion_name in CRITERIONS, f"{criterion_name} is not a valid criterion."
-    optimizer_name = model_config["training"]["optimizer"]["name"]
+    optimizer_name = config["training"]["optimizer"]["name"]
     assert optimizer_name in OPTIMIZERS, f"{optimizer_name} is not a valid optimizer."
 
-    early_stopping_monitor = model_config["training"]["early_stopping"]["monitor"]
-    early_stopping_patience = model_config["training"]["early_stopping"]["patience"]
+    early_stopping_monitor = config["training"]["early_stopping"]["monitor"]
+    early_stopping_patience = config["training"]["early_stopping"]["patience"]
 
-    checkpoint_frequency = model_config["training"]["checkpoint_frequency"]
+    checkpoint_frequency = config["training"]["checkpoint_frequency"]
 
-    if backbone_name == "bert":
-        # TODO: implement BERT model
-        lm_output_dim = 768
-        pass
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"device: {device}")
+
+    if backbone_name == "big-bird-roberta-base":
+        backbone = models.BigBirdRobertaBase(
+            aggregation=backbone_aggregation,
+            device=device,
+        )
+        lm_output_dim = backbone.output_dim
     else:
         KeyError(f"{backbone_name} is not a valid backbone.")
 
@@ -144,7 +152,7 @@ def main() -> None:
         reg_model = models.MultiRegressionArchitecture(
             num_features_in=lm_output_dim,
             hidden_layers_size=hidden_layers_size,
-            num_features_out=len(target_vars),
+            num_features_out=len(target_vars_names),
             non_linearity=non_lin,
         )
     elif model_name == "joint-reg":
@@ -153,7 +161,7 @@ def main() -> None:
         reg_model = models.JointRegressionArchitecture(
             num_features_in=lm_output_dim,
             hidden_layers_size=hidden_layers_size,
-            num_features_out=len(target_vars),
+            num_features_out=len(target_vars_names),
             non_linearity=non_lin,
         )
     elif model_name == "multi-reg-joint-emb":
@@ -173,8 +181,9 @@ def main() -> None:
         KeyError(f"{model_name} is not a valid model.")
 
     end_to_end_model = models.TextOnlyModel(
-        backbone=reg_model,
-        target_vars=target_vars,
+        embedding_generation=backbone,
+        regression_model=reg_model,
+        device=device,
     )
 
     if criterion_name == "mse":
@@ -185,36 +194,66 @@ def main() -> None:
         KeyError(f"{criterion_name} is not a valid criterion.")
 
     if optimizer_name == "adam":
-        learning_rate = model_config["training"]["optimizer"]["learning_rate"]
-        optimizer = torch.optim.Adam(lr=learning_rate)
+        learning_rate = config["training"]["optimizer"]["learning_rate"]
+        optimizer = torch.optim.Adam(
+            end_to_end_model.parameters(),
+            lr=learning_rate,
+        )
     else:
         KeyError(f"{optimizer_name} is not a valid optimizer.")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"device: {device}")
+    if input_path.suffix == ".csv":
+        df = pd.read_csv(input_path)
+    elif input_path.suffix == ".xlsx":
+        df = pd.read_excel(input_path)
 
-    df = pd.read_csv(input_path)
+    target_vars = df[target_vars_names].to_numpy()
+    target_vars = torch.tensor(target_vars, dtype=torch.float)
 
-    # TODO: tokenize the text data
+    print("target vars shape:", target_vars.shape)
 
-    # TODO: create a dataset and dataloader
-    dataset = data_loading.PersonalityDataset()
+    all_inputs = {}
+    texts = df["final_text"].tolist()
+    for i in tqdm(range(math.ceil(len(texts) / batch_size))):
+        batch_texts = texts[i * batch_size : (i + 1) * batch_size]
+        inputs = backbone.tokenize(batch_texts)
+        # inputs = {key: value.to(device) for key, value in inputs.items()}
+        if i == 0:
+            for key in inputs.keys():
+                all_inputs[key] = []
+        for key, value in inputs.items():
+            all_inputs[key].append(value)
+    all_inputs = {key: torch.cat(value, dim=0) for key, value in all_inputs.items()}
+
+    print("all inputs shape:", {key: value.shape for key, value in all_inputs.items()})
+
+    dataset = data_loading.PersonalityDataset(
+        tokenized_texts=all_inputs,
+        target_vars=target_vars,
+    )
 
     train_dataset, val_dataset = data_loading.train_test_split(dataset, ratio=0.8)
+    normalization_params = train_dataset.normalize_targets()
+    val_dataset.normalize_targets(normalization_params)
+
+    print("train dataset size:", len(train_dataset))
+    print("val dataset size:", len(val_dataset))
 
     trainer = learning.Trainer(
         model=end_to_end_model,
         optimizer=optimizer,
         criterion=criterion,
-        train_loader=torch.utils.data.DataLoader(train_dataset),
-        val_loader=torch.utils.data.DataLoader(val_dataset),
+        train_loader=torch.utils.data.DataLoader(train_dataset, batch_size=batch_size),
+        val_loader=torch.utils.data.DataLoader(val_dataset, batch_size=batch_size),
         num_epochs=num_epochs,
         early_stopping_monitor=early_stopping_monitor,
         early_stopping_patience=early_stopping_patience,
+        best_model_path=output_path / "best_model.pt",
         checkpoint_path=output_path / "checkpoint.pt",
         checkpoint_frequency=checkpoint_frequency,
         device=device,
     )
+    train_hist, val_hist = trainer.train()
 
     # TODO: save the model
 
