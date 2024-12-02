@@ -182,12 +182,13 @@ def main() -> None:
 
     backbone = backbone.to(device)
     reg_model = reg_model.to(device)
-    
+
     end_to_end_model = models.TextOnlyModel(
         embedding_generation=backbone,
         regression_model=reg_model,
         device=device,
     )
+    end_to_end_model = end_to_end_model.to(device)
 
     if criterion_name == "mse":
         criterion = torch.nn.MSELoss()
