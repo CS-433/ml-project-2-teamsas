@@ -74,27 +74,16 @@ class BigBirdRobertaBase(BertLanguageModel):
         self.output_dim = 768
 
 
-class Architecture(torch.nn.Module):
-    def __init__(
-        self,
-        num_features_in: int,
-        num_features_out: int,
-        non_linearity: nn.Module,
-    ) -> None:
-        super().__init__()
-        self.num_features_in = num_features_in
-        self.num_features_out = num_features_out
-        self.non_linearity = non_linearity
-
-
-class FullyConnectedArchitecture(Architecture):
+class FullyConnectedArchitecture(torch.nn.Module):
     def __init__(
         self,
         num_features_in: int,
         hidden_layers_size: List[int],
         non_linearity: nn.Module,
     ) -> None:
-        super().__init__(num_features_in, hidden_layers_size[-1], non_linearity)
+        self.num_features_in = num_features_in
+        self.num_features_out = hidden_layers_size[-1]
+        self.non_linearity = non_linearity
         self.hidden_layers_size = hidden_layers_size
         layers_sizes = zip(
             [num_features_in] + hidden_layers_size[:-1],
@@ -111,7 +100,7 @@ class FullyConnectedArchitecture(Architecture):
         return self.model(x)
 
 
-class MultiRegressionArchitecture(Architecture):
+class MultiRegressionArchitecture(torch.nn.Module):
     def __init__(
         self,
         num_features_in: int,
@@ -119,7 +108,9 @@ class MultiRegressionArchitecture(Architecture):
         num_features_out: int,
         non_linearity: nn.Module,
     ) -> None:
-        super().__init__(num_features_in, num_features_out, non_linearity)
+        self.num_features_in = num_features_in
+        self.num_features_out = num_features_out
+        self.non_linearity = non_linearity
         self.hidden_layers_size = hidden_layers_size
         self.models = []
         for _ in range(num_features_out):
@@ -137,7 +128,7 @@ class MultiRegressionArchitecture(Architecture):
         return torch.cat([model(x) for model in self.models], dim=1)
 
 
-class JointRegressionArchitecture(Architecture):
+class JointRegressionArchitecture(torch.nn.Module):
     def __init__(
         self,
         num_features_in: int,
@@ -145,7 +136,9 @@ class JointRegressionArchitecture(Architecture):
         num_features_out: int,
         non_linearity: nn.Module,
     ) -> None:
-        super().__init__(num_features_in, num_features_out, non_linearity)
+        self.num_features_in = num_features_in
+        self.num_features_out = num_features_out
+        self.non_linearity = non_linearity
         self.hidden_layers_size = hidden_layers_size
         self.encoder = FullyConnectedArchitecture(
             num_features_in,
@@ -160,7 +153,7 @@ class JointRegressionArchitecture(Architecture):
         return self.model(x)
 
 
-class MultiRegressionWithJointEncoderArchitecture(Architecture):
+class MultiRegressionWithJointEncoderArchitecture(torch.nn.Module):
     def __init__(
         self,
         num_features_in: int,
@@ -169,7 +162,9 @@ class MultiRegressionWithJointEncoderArchitecture(Architecture):
         num_features_out: int,
         non_linearity: nn.Module,
     ) -> None:
-        super().__init__(num_features_in, num_features_out, non_linearity)
+        self.num_features_in = num_features_in
+        self.num_features_out = num_features_out
+        self.non_linearity = non_linearity
         self.shared_hidden_layers_size = shared_hidden_layers_size
         self.joint_embedding_size = shared_hidden_layers_size[-1]
         self.independent_hidden_layers_size = independent_hidden_layers_size
@@ -198,7 +193,7 @@ class TextOnlyModel(torch.nn.Module):
     def __init__(
         self,
         embedding_generation: LanguageModel,
-        regression_model: Architecture,
+        regression_model: torch.nn.Module,
         device: torch.device,
     ) -> None:
         super().__init__()
