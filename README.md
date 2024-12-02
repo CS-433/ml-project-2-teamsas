@@ -8,23 +8,23 @@ The data is confidential and we cannot push it on GitHub. The data should be pla
 ./data/dataset.xlsx
 ```
 
-### Methods
+## Methods
 
-#### Data Processing
+### Data Processing
 
 The methods for data cleaning and augmentation can be executed using `main_data.py` script. The details of running this script is as below.
 
 ```bash
 ```
 
-#### Learning
+### Learning
 
 The learning methodologies can be executed using `main_learning.py` script. The details of running this script is as below.
 
 ```bash
 ```
 
-#### Evaluation and Plots
+### Evaluation and Plots
 
 The models output can be passed to `main_evaluation.py` for evaluation and plotting process.
 
