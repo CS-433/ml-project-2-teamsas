@@ -81,6 +81,7 @@ class FullyConnectedArchitecture(torch.nn.Module):
         hidden_layers_size: List[int],
         non_linearity: nn.Module,
     ) -> None:
+        super().__init__()
         self.num_features_in = num_features_in
         self.num_features_out = hidden_layers_size[-1]
         self.non_linearity = non_linearity
@@ -108,6 +109,7 @@ class MultiRegressionArchitecture(torch.nn.Module):
         num_features_out: int,
         non_linearity: nn.Module,
     ) -> None:
+        super().__init__()
         self.num_features_in = num_features_in
         self.num_features_out = num_features_out
         self.non_linearity = non_linearity
@@ -136,6 +138,7 @@ class JointRegressionArchitecture(torch.nn.Module):
         num_features_out: int,
         non_linearity: nn.Module,
     ) -> None:
+        super().__init__()
         self.num_features_in = num_features_in
         self.num_features_out = num_features_out
         self.non_linearity = non_linearity
@@ -162,6 +165,7 @@ class MultiRegressionWithJointEncoderArchitecture(torch.nn.Module):
         num_features_out: int,
         non_linearity: nn.Module,
     ) -> None:
+        super().__init__()
         self.num_features_in = num_features_in
         self.num_features_out = num_features_out
         self.non_linearity = non_linearity
