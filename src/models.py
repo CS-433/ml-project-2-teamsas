@@ -207,4 +207,5 @@ class TextOnlyModel(torch.nn.Module):
         self.device = device
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.regression_model(self.embedding_generation(x))
+        x = self.embedding_generation(x)
+        return self.regression_model(x)

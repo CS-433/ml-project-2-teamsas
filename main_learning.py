@@ -180,6 +180,9 @@ def main() -> None:
     else:
         KeyError(f"{model_name} is not a valid model.")
 
+    backbone = backbone.to(device)
+    reg_model = reg_model.to(device)
+    
     end_to_end_model = models.TextOnlyModel(
         embedding_generation=backbone,
         regression_model=reg_model,
