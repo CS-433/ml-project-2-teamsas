@@ -12,8 +12,9 @@ model:
   arch:
     non_linearity: "relu"
     hidden_layers:
-      - 100
-      - 50
+      - 384
+      - 96
+      - 32
 # model:
 #   name: "multi-reg-joint-emb"
 #   arch:
