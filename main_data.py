@@ -179,10 +179,10 @@ def main() -> None:
     word_deleting_aug = args.word_deleting_aug
     if noise_injection:
         assert (
-            0 <= char_insert_aug <= 1,
-            0 <= ocr_aug <= 1,
-            0 <= word_swapping_aug <= 1,
-            0 <= word_deleting_aug <= 1,
+            0 <= char_insert_aug <= 1
+            and 0 <= ocr_aug <= 1
+            and 0 <= word_swapping_aug <= 1
+            and 0 <= word_deleting_aug <= 1
         ), "char_insert_aug, ocr_aug, word_swapping_aug, word_deleting_aug should be between 0 and 1."
         assert (
             char_insert_aug + ocr_aug + word_swapping_aug + word_deleting_aug > 0
@@ -201,22 +201,16 @@ def main() -> None:
     target_corpus = args.target_corpus
     if tf_idf_based:
         assert (
-            0 <= tf_idf_dropping_p <= 1,
-            0 <= tf_idf_syn_replace_p <= 1,
+            0 <= tf_idf_dropping_p <= 1 and 0 <= tf_idf_syn_replace_p <= 1
         ), "tf_idf_dropping_p, tf_idf_syn_replace_p should be between 0 and 1."
         assert (
-            tf_idf_dropping_p + tf_idf_syn_replace_p > 0,
-            "at least one augmentation method should be activated.",
-        )
-        assert (
-            target_corpus is not None,
-            "target corpus should be provided.",
-        )
+            tf_idf_dropping_p + tf_idf_syn_replace_p > 0
+        ), "at least one augmentation method should be activated."
+        assert target_corpus is not None, "target corpus should be provided."
     else:
         assert (
-            tf_idf_dropping_p == 0 and tf_idf_syn_replace_p == 0,
-            "inconsistent parameters, tf_idf_based is not activated while tf_idf_dropping_p, tf_idf_syn_replace_p are not zeros.",
-        )
+            tf_idf_dropping_p == 0 and tf_idf_syn_replace_p == 0
+        ), "inconsistent parameters, tf_idf_based is not activated while tf_idf_dropping_p, tf_idf_syn_replace_p are not zeros."
 
     masking_p = args.masking_p
     model_name = args.model_name
