@@ -1,0 +1,10 @@
+sacremoses
+numpy
+pandas
+torch
+torchvision
+torchaudio
+nltk
+nlpaug
+sklearn
+transformers

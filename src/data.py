@@ -15,19 +15,15 @@ from nltk.tokenize import sent_tokenize
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 import torch
+from tqdm import tqdm
 from transformers import BertTokenizer, BertForMaskedLM
 from transformers import MarianMTModel, MarianTokenizer
 from transformers import logging
 
 logging.set_verbosity_error()
 
-nltk.download("punkt")
-nltk.download("brown")
-nltk.download("reuters")
 
-
-def clean_data(data_path="./data/dataset.xlsx"):
-    data = pd.read_excel(data_path)
+def clean_data(data: pd.DataFrame) -> pd.DataFrame:
     clean_data = data.drop(
         columns=[
             "Unnamed: 0",
@@ -55,11 +51,9 @@ def clean_data(data_path="./data/dataset.xlsx"):
         inplace=False,
     )
     clean_data.dropna(inplace=True)
-
     return clean_data
 
 
-# method 1
 def back_translation(text, source_language="english", target_language="french"):
     temperature = 1
     original_text = text
@@ -99,7 +93,6 @@ def back_translation(text, source_language="english", target_language="french"):
     return final_text
 
 
-# Method 2
 def noise_injection(text, char_insert_p=0.2, ocr_aug_p=0.1, word_swaping_aug_p=0.3):
 
     word_swaping_aug = naw.RandomWordAug(action="swap", aug_p=word_swaping_aug_p)
@@ -127,7 +120,6 @@ def get_wordnet_pos(treebank_tag):
         return None
 
 
-# Method 3
 def synonyme_replacement_tfidf_dropout(
     text, tfidf_scores, dropout_p=0.5, replace_p=0.5
 ):
@@ -231,7 +223,6 @@ def mask_by_tfidf_pos(
     return masked_tokens
 
 
-# Method 4
 def contexual_bert_by_tfidf_pos(
     text,
     tfidf_scores,
@@ -293,7 +284,7 @@ def data_augmentation(
     corpus = get_corpus(corpus_type=target_corpus)
     tfidf_scores = compute_tfidf(corpus)
 
-    for i in range(data.shape[0]):
+    for i in tqdm(range(data.shape[0])):
         text = data.iloc[i, :]["final_text"]
         for j in range(n_augments):
             p = random.random()

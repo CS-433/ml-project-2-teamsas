@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+import nltk
 import pandas as pd
 
 from src import data
@@ -33,6 +34,11 @@ def main() -> None:
         type=Path,
         required=True,
         help="path to the output data.",
+    )
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="activate cleaning method.",
     )
     parser.add_argument(
         "-n",
@@ -161,52 +167,41 @@ def main() -> None:
     row_end = args.row_end
     assert row_start >= 0, "row_start should be greater than or equal to 0."
     assert row_end >= -1, "row_end should be greater than or equal to -1."
-    assert row_start < row_end, "row_start should be less than row_end."
     if not (row_start == 0 and row_end == -1):
+        assert row_start < row_end, "row_start should be less than row_end."
         assert row_end <= len(df), "row_end should be less than the number of rows."
         df = df.iloc[row_start:row_end]
 
     translation = args.translation
-    source_lang = args.source_lang
     target_lang = args.target_lang
     if translation:
         assert target_lang is not None, "target lang should be provided."
-        assert source_lang != target_lang, "different source and target langs."
 
     noise_injection = args.noise_injection
-    char_insert_aug = args.char_insert_aug
-    ocr_aug = args.ocr_aug
-    word_swapping_aug = args.word_swapping_aug
-    word_deleting_aug = args.word_deleting_aug
+    char_insert_aug = args.char_insert_aug_p
+    ocr_aug = args.ocr_aug_p
+    word_swapping_aug = args.word_swapping_aug_p
     if noise_injection:
         assert (
             0 <= char_insert_aug <= 1
             and 0 <= ocr_aug <= 1
             and 0 <= word_swapping_aug <= 1
-            and 0 <= word_deleting_aug <= 1
         ), "char_insert_aug, ocr_aug, word_swapping_aug, word_deleting_aug should be between 0 and 1."
         assert (
-            char_insert_aug + ocr_aug + word_swapping_aug + word_deleting_aug > 0
+            char_insert_aug + ocr_aug + word_swapping_aug > 0
         ), "at least one augmentation method should be activated."
     else:
         assert (
-            char_insert_aug == 0
-            and ocr_aug == 0
-            and word_swapping_aug == 0
-            and word_deleting_aug == 0
+            char_insert_aug == 0 and ocr_aug == 0 and word_swapping_aug == 0
         ), "inconsistent parameters, noise_injection is not activated while char_insert_aug, ocr_aug, word_swapping_aug, word_deleting_aug are not zeros."
 
-    tf_idf_based = args.tf_idf_based
     tf_idf_dropping_p = args.tf_idf_dropping_p
     tf_idf_syn_replace_p = args.tf_idf_syn_replace_p
     target_corpus = args.target_corpus
-    if tf_idf_based:
-        assert (
-            0 <= tf_idf_dropping_p <= 1 and 0 <= tf_idf_syn_replace_p <= 1
-        ), "tf_idf_dropping_p, tf_idf_syn_replace_p should be between 0 and 1."
-        assert (
-            tf_idf_dropping_p + tf_idf_syn_replace_p > 0
-        ), "at least one augmentation method should be activated."
+    assert (
+        0 <= tf_idf_dropping_p <= 1 and 0 <= tf_idf_syn_replace_p <= 1
+    ), "tf_idf_dropping_p, tf_idf_syn_replace_p should be between 0 and 1."
+    if tf_idf_dropping_p + tf_idf_syn_replace_p > 0:
         assert target_corpus is not None, "target corpus should be provided."
     else:
         assert (
@@ -217,7 +212,35 @@ def main() -> None:
     model_name = args.model_name
     assert 0 <= masking_p <= 1, "masking_p should be between 0 and 1."
 
-    # TODO: call the augmentation and cleaning methods
+    if args.clean:
+        df = data.clean_data(df)
+
+    df.to_csv(output_path / "clean_data.csv", index=False)
+
+    nltk.download("punkt")
+    nltk.download('averaged_perceptron_tagger_eng')
+    nltk.download('wordnet')
+    nltk.download('punkt_tab')
+    nltk.download("brown")
+    nltk.download("reuters")
+
+    df = data.data_augmentation(
+        data=df,
+        translation=translation,
+        source_language="english",
+        target_language=target_lang,
+        noise=noise_injection,
+        char_insert_p=char_insert_aug,
+        ocr_aug_p=ocr_aug,
+        word_swaping_aug_p=word_swapping_aug,
+        dropout_p=tf_idf_dropping_p,
+        replace_p=tf_idf_syn_replace_p,
+        mask_p=masking_p,
+        n_augments=n_aug,
+        target_corpus=target_corpus,
+    )
+
+    df.to_csv(output_path / "augmented_data.csv", index=False)
 
 
 if __name__ == "__main__":
