@@ -57,6 +57,11 @@ class BertLanguageModel(LanguageModel):
             # ) / attention_mask.sum(dim=1).unsqueeze(-1)
         return embeddings
 
+    def to_device(self, device: torch.device) -> "BertLanguageModel":
+        self.model = self.model.to(device)
+        self.device = device
+        return self
+
 
 class BigBirdRobertaBase(BertLanguageModel):
     def __init__(
@@ -129,6 +134,11 @@ class MultiRegressionArchitecture(torch.nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return torch.cat([model(x) for model in self.models], dim=1)
 
+    def to_device(self, device: torch.device) -> "MultiRegressionArchitecture":
+        for i, model in enumerate(self.models):
+            self.models[i] = model.to(device)
+        return self.to(device)
+
 
 class JointRegressionArchitecture(torch.nn.Module):
     def __init__(
@@ -154,6 +164,13 @@ class JointRegressionArchitecture(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
+
+    def to_device(self, device: torch.device) -> "JointRegressionArchitecture":
+        self.encoder.to(device)
+        self.nl = self.nl.to(device)
+        self.ll = self.ll.to(device)
+        self.model = self.model.to(device)
+        return self.to(device)
 
 
 class MultiRegressionWithJointEncoderArchitecture(torch.nn.Module):
@@ -192,6 +209,15 @@ class MultiRegressionWithJointEncoderArchitecture(torch.nn.Module):
         x = torch.cat([ll(x) for ll in self.lls], dim=1)
         return x
 
+    def to_device(
+        self, device: torch.device
+    ) -> "MultiRegressionWithJointEncoderArchitecture":
+        self.shared_encoder.to(device)
+        self.nl = self.nl.to(device)
+        for ll in self.lls:
+            ll.to(device)
+        return self.to(device)
+
 
 class TextOnlyModel(torch.nn.Module):
     def __init__(
@@ -206,5 +232,12 @@ class TextOnlyModel(torch.nn.Module):
         self.device = device
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.embedding_generation(x)
+        with torch.no_grad():
+            x = self.embedding_generation(x).detach()
         return self.regression_model(x)
+
+    def to_device(self, device: torch.device) -> "TextOnlyModel":
+        self.embedding_generation.to(device)
+        self.regression_model.to(device)
+        self.device = device
+        return self.to(device)

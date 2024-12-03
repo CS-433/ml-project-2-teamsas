@@ -180,9 +180,8 @@ def main() -> None:
     else:
         KeyError(f"{model_name} is not a valid model.")
 
-    backbone = backbone.to(device)
-    reg_model = reg_model.to(device)
-
+    backbone = backbone.to_device(device)
+    reg_model = reg_model.to_device(device)
     end_to_end_model = models.TextOnlyModel(
         embedding_generation=backbone,
         regression_model=reg_model,
@@ -200,7 +199,7 @@ def main() -> None:
     if optimizer_name == "adam":
         learning_rate = config["training"]["optimizer"]["learning_rate"]
         optimizer = torch.optim.Adam(
-            end_to_end_model.parameters(),
+            reg_model.parameters(),
             lr=learning_rate,
         )
     else:

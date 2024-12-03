@@ -58,8 +58,7 @@ class Trainer(object):
         num_samples = 0
         with torch.no_grad():
             for data, target in tqdm(data_loader):
-                data, target = data.to(self.device), target.to(self.device)
-                data = {k: v.to(self.device) for k, v in data.items()}
+                data, target = data, target.to(self.device)
                 output = model(data)
                 sum_abs_error += torch.sum(torch.abs(output - target)).item()
                 sum_squared_error += torch.sum((output - target) ** 2).item()
