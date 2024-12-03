@@ -219,6 +219,7 @@ def main() -> None:
     df.to_csv(output_path / "clean_data.csv", index=False)
 
     nltk.download("punkt")
+    nltk.download('stopwords')
     nltk.download('averaged_perceptron_tagger_eng')
     nltk.download('wordnet')
     nltk.download('punkt_tab')
