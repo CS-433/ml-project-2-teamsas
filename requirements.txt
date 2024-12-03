@@ -9,3 +9,4 @@ nlpaug
 scikit-learn
 transformers
 openpyxl
+sentencepiece
