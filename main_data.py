@@ -169,7 +169,8 @@ def main() -> None:
     assert row_end >= -1, "row_end should be greater than or equal to -1."
     if not (row_start == 0 and row_end == -1):
         assert row_start < row_end, "row_start should be less than row_end."
-        assert row_end <= len(df), "row_end should be less than the number of rows."
+        row_end = len(df) if row_end == -1 else row_end
+        row_end = min(row_end, len(df))
         df = df.iloc[row_start:row_end]
 
     translation = args.translation
