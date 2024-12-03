@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:1
 
 echo "job $1 started"
-mkdir -p $HOME/Desktop/ml-project-2-teamsas/artifacts/data/subset_$1
+mkdir -p $HOME/ml-project-2-teamsas/artifacts/data/subset_$1
 
 echo start time: $(date)
 echo start index: $((($1 - 1) * 200))

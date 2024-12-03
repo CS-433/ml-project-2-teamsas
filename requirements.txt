@@ -8,3 +8,4 @@ nltk
 nlpaug
 scikit-learn
 transformers
+openpyxl
