@@ -68,7 +68,7 @@ def back_translation(text, source_language="english", target_language="french"):
             sentence, return_tensors="pt", padding=True, truncation=True
         ).to(device)
         translated_ids = model.generate(
-            **inputs, do_sample=True, temperature=temperature, max_length=2048
+            **inputs, do_sample=True, temperature=temperature, max_length=1024
         )
         intermediate_text = tokenizer.decode(
             translated_ids[0], skip_special_tokens=True
@@ -81,7 +81,7 @@ def back_translation(text, source_language="english", target_language="french"):
             intermediate_text, return_tensors="pt", padding=True, truncation=True
         ).to(device)
         back_translated_ids = back_model.generate(
-            **back_inputs, do_sample=True, temperature=temperature, max_length=2048
+            **back_inputs, do_sample=True, temperature=temperature, max_length=1024
         )
         back_translated_text = back_tokenizer.decode(
             back_translated_ids[0], skip_special_tokens=True
