@@ -258,7 +258,10 @@ def main() -> None:
     )
     train_hist, val_hist = trainer.train()
 
-    # TODO: save the model
+    print("train_hist:", train_hist)
+    print("val_hist:", val_hist)
+
+    # eval model
 
 
 if __name__ == "__main__":

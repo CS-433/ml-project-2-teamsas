@@ -48,13 +48,14 @@ class BertLanguageModel(LanguageModel):
             outputs = self.model(**inputs)
             last_hidden_state = outputs.last_hidden_state
             if self.aggregation == "mean":
-                # TODO
-                embeddings = last_hidden_state.mean(dim=1)
+                mask = (
+                    inputs["attention_mask"]
+                    .unsqueeze(-1)
+                    .expand(last_hidden_state.size())
+                )
+                embeddings = (last_hidden_state * mask).sum(1) / mask.sum(1)
             elif self.aggregation == "cls":
                 embeddings = last_hidden_state[:, 0, :]
-            # batch_avg_embeddings = (last_hidden_state * attention_mask.unsqueeze(-1)).sum(
-            #     dim=1
-            # ) / attention_mask.sum(dim=1).unsqueeze(-1)
         return embeddings
 
     def to_device(self, device: torch.device) -> "BertLanguageModel":

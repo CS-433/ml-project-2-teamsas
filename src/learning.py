@@ -43,7 +43,7 @@ class Trainer(object):
 
     def _train_epoch(self):
         model = self.model.train()
-        for data, target in tqdm(self.train_loader):
+        for data, target in tqdm(self.train_loader, leave=False):
             data, target = data, target.to(self.device)
             self.optimizer.zero_grad()
             output = model(data)
@@ -57,7 +57,7 @@ class Trainer(object):
         sum_squared_error = 0
         num_samples = 0
         with torch.no_grad():
-            for data, target in tqdm(data_loader):
+            for data, target in tqdm(data_loader, leave=False):
                 data, target = data, target.to(self.device)
                 output = model(data)
                 sum_abs_error += torch.sum(torch.abs(output - target)).item()
@@ -88,21 +88,28 @@ class Trainer(object):
         best_measurement = float("inf")
         best_epoch = 0
 
-        for epoch in tqdm(range(self.num_epochs)):
-            self._train_epoch()
-            train_metrics = self._validate_epoch(self.train_loader)
-            val_metrics = self._validate_epoch(self.val_loader)
-            train_hist.append(train_metrics)
-            val_hist.append(val_metrics)
-            measurement = val_metrics[self.early_stopping_monitor]
-            if measurement < best_measurement:
-                self._save_model(self.best_model_path)
-                best_measurement = measurement
-                best_epoch = epoch
-            if epoch - best_epoch > self.early_stopping_patience:
-                break
-            if self.checkpoint_path is not None:
-                if epoch % self.checkpoint_frequency == 0:
-                    self._save_model(self.checkpoint_path)
+        with tqdm(range(self.num_epochs)) as pbar:
+            for epoch in pbar:
+                self._train_epoch()
+                train_metrics = self._validate_epoch(self.train_loader)
+                val_metrics = self._validate_epoch(self.val_loader)
+                train_hist.append(train_metrics)
+                val_hist.append(val_metrics)
+                pbar.set_postfix(
+                    {
+                        "train_mae": train_metrics["mae"],
+                        "val_mae": val_metrics["mae"],
+                    }
+                )
+                measurement = val_metrics[self.early_stopping_monitor]
+                if measurement < best_measurement:
+                    self._save_model(self.best_model_path)
+                    best_measurement = measurement
+                    best_epoch = epoch
+                if epoch - best_epoch > self.early_stopping_patience:
+                    break
+                if self.checkpoint_path is not None:
+                    if epoch % self.checkpoint_frequency == 0:
+                        self._save_model(self.checkpoint_path)
         self._load_model(self.best_model_path)
         return self._compile_hist(train_hist), self._compile_hist(val_hist)

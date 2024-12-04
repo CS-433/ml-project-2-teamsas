@@ -15,19 +15,10 @@ model:
       - 384
       - 96
       - 32
-# model:
-#   name: "multi-reg-joint-emb"
-#   arch:
-#     shared_layers:
-#       - 100
-#       - 50
-#     independent_layers:
-#       - 20
-#       - 15
 training:
   validation_split: 0.8
   num_epochs: 100
-  batch_size: 8
+  batch_size: 32
   criterion: "mse"
   optimizer:
     name: "adam"
