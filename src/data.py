@@ -273,7 +273,7 @@ def data_augmentation(
         for j in range(n_augments):
             p = random.random()
             new_text = ""
-            if p < 0:
+            if p < 0.3:
                 new_text = text
 
                 # if translation:
