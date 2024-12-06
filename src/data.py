@@ -2,7 +2,8 @@ import random
 
 import numpy as np
 import pandas as pd
-
+import re
+from transformers import BigBirdForMaskedLM, BigBirdTokenizer
 import nlpaug.augmenter.char as nac
 import nlpaug.augmenter.word as naw
 import nltk
@@ -56,41 +57,33 @@ def clean_data(data: pd.DataFrame) -> pd.DataFrame:
 
 def back_translation(text, source_language="english", target_language="french"):
     temperature = 1
-    original_text = text
-    tokenizer = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-fr")
-    model = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-fr")
+    if isinstance(text, str):
+        original_text = re.sub(r'\.{3}', '.', text)
+    else:
+        original_text = re.sub(r'\.{3}', '.', text.iloc[0])
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
-    sentences = sent_tokenize(original_text)
-    back_translated_sentences = []
-    for sentence in sentences:
-        inputs = tokenizer(
-            sentence, return_tensors="pt", padding=True, truncation=True
-        ).to(device)
-        translated_ids = model.generate(
-            **inputs, do_sample=True, temperature=temperature, max_length=1024
-        )
-        intermediate_text = tokenizer.decode(
-            translated_ids[0], skip_special_tokens=True
-        )
-        back_tokenizer = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-fr-en")
-        back_model = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-fr-en").to(
-            device
-        )
-        back_inputs = back_tokenizer(
-            intermediate_text, return_tensors="pt", padding=True, truncation=True
-        ).to(device)
-        back_translated_ids = back_model.generate(
-            **back_inputs, do_sample=True, temperature=temperature, max_length=1024
-        )
-        back_translated_text = back_tokenizer.decode(
-            back_translated_ids[0], skip_special_tokens=True
-        )
-        back_translated_sentences.append(back_translated_text)
+    tokenizer = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-fr")
+    model = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-fr").to(device)
+    back_model = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-fr-en").to(device)
+    back_tokenizer = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-fr-en")
+            
+    with torch.no_grad():
+        sentences = sent_tokenize(original_text)
+        back_translated_sentences = []
+        for sentence in sentences:
+            inputs = tokenizer(sentence, return_tensors="pt", padding=True, truncation=True).to(device)
+            translated_ids = model.generate(**inputs, do_sample=False, temperature=temperature, max_length=512)
+            intermediate_text = tokenizer.decode(translated_ids[0], skip_special_tokens=True)
+            back_inputs = back_tokenizer(intermediate_text, return_tensors="pt", padding=True, truncation=True).to(device)
+            back_translated_ids = back_model.generate(**back_inputs, do_sample=False, temperature=temperature,max_length=512)
+            back_translated_text = back_tokenizer.decode(back_translated_ids[0], skip_special_tokens=True)
+            back_translated_sentences.append(back_translated_text)
 
     final_text = " ".join(back_translated_sentences)
-
     return final_text
+    
+
 
 
 def noise_injection(text, char_insert_p=0.2, ocr_aug_p=0.1, word_swaping_aug_p=0.3):
@@ -194,15 +187,18 @@ def compute_tfidf(corpus):
     return tfidf_scores
 
 
-def mask_by_tfidf_pos(
-    text, tfidf_scores, mask_p=0.3, target_pos=["NN", "VB", "JJ", "RB"]
-):
-
+def mask_by_tfidf_pos(text, tfidf_scores, mask_p = 0.3, target_pos=['NN', 'VB', 'JJ', 'RB']):
+    if isinstance(text, str):
+        text = re.sub(r'\.{3}', '.', text)
+    else:
+        text = re.sub(r'\.{3}', '.', text.iloc[0])
     words = word_tokenize(text)
     pos_tags = pos_tag(words)
     masked_tokens = words.copy()
     max_tfidf = max(tfidf_scores.values())
     min_tfidf = min(tfidf_scores.values())
+    model_name = "google/bigbird-roberta-base"
+    tokenizer = BigBirdTokenizer.from_pretrained(model_name)
 
     for i, (word, pos) in enumerate(pos_tags):
         word_lower = word.lower()
@@ -218,50 +214,38 @@ def mask_by_tfidf_pos(
         p = random.random()
 
         if p < mask_prob:
-            masked_tokens[i] = "[MASK]"
+            masked_tokens[i] = tokenizer.mask_token
 
-    return masked_tokens
+    return " ".join(masked_tokens)
 
 
-def contexual_bert_by_tfidf_pos(
-    text,
-    tfidf_scores,
-    mask_p=0.3,
-    n_augments=1,
-    target_pos=["NN", "VB", "JJ", "RB"],
-    model_name="bert-base-uncased",
-):
+def contexual_bert_by_tfidf_pos(text, tfidf_scores, mask_p = 0.3, n_augments = 1, target_pos=['NN', 'VB', 'JJ', 'RB'], model_name = 'bert-base-uncased'):
 
-    augmented_texts = []
-    tokenizer = BertTokenizer.from_pretrained(model_name)
-    model = BertForMaskedLM.from_pretrained(model_name)
-    config = model.config
-    config.max_position_embeddings = 2048
-    model = BertForMaskedLM(config)
+    masked_text = mask_by_tfidf_pos(text, tfidf_scores, mask_p=0.3, target_pos=target_pos)
+    model_name = "google/bigbird-roberta-base"
+    tokenizer = BigBirdTokenizer.from_pretrained(model_name)
+    model = BigBirdForMaskedLM.from_pretrained(model_name)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     model.eval()
 
-    for _ in range(n_augments):
-        masked_tokens = mask_by_tfidf_pos(text, tfidf_scores, mask_p, target_pos)
-        masked_ids = tokenizer.convert_tokens_to_ids(masked_tokens)
-        input_ids = torch.tensor([masked_ids]).to(device)
+    inputs = tokenizer(masked_text, return_tensors="pt")
+    inputs = {key: value.to(device) for key, value in inputs.items()}
 
-        with torch.no_grad():
-            outputs = model(input_ids)
-            predictions = outputs.logits
+    with torch.no_grad():
+        outputs = model(**inputs)
+    logits = outputs.logits
+    mask_token_index = (inputs["input_ids"] == tokenizer.mask_token_id)[0].nonzero(as_tuple=True)[0]
+    predicted_ids = logits[0, mask_token_index].argmax(dim=-1)
+    
+    predicted_tokens = tokenizer.convert_ids_to_tokens(predicted_ids)
 
-        predicted_tokens = masked_tokens.copy()
-        for i, token in enumerate(masked_tokens):
-            if token == "[MASK]":
-                predicted_id = torch.argmax(predictions[0, i]).item()
-                predicted_token = tokenizer.convert_ids_to_tokens([predicted_id])[0]
-                predicted_tokens[i] = predicted_token
-
-        augmented_text = tokenizer.convert_tokens_to_string(predicted_tokens)
-        augmented_texts.append(augmented_text)
-
-    return augmented_texts
+    tokenized_text = tokenizer.convert_ids_to_tokens(inputs["input_ids"][0])
+    for idx, token in zip(mask_token_index.tolist(), predicted_tokens):
+        tokenized_text[idx] = token 
+        
+    augmented_text = tokenizer.convert_tokens_to_string(tokenized_text[1:-1])
+    return augmented_text
 
 
 def data_augmentation(
@@ -289,7 +273,7 @@ def data_augmentation(
         for j in range(n_augments):
             p = random.random()
             new_text = ""
-            if p < 0.3:
+            if p < 0:
                 new_text = text
 
                 # if translation:
@@ -321,7 +305,7 @@ def data_augmentation(
                     mask_p=mask_p,
                     n_augments=1,
                     target_pos=["NN", "VB", "JJ", "RB"],
-                )[0]
+                )
 
                 # if noise:
                 new_text = noise_injection(
