@@ -63,3 +63,7 @@ TODO
 - Aryan Ahadinia, Email Address: <aryan.ahadinia@epfl.ch>
 - Saba Nasiri, Email Address: <saba.nasiri@epfl.ch>
 - Shahrzad Javidi, Email Address: <shahrzad.javidi@epfl.ch>
+
+## References
+
+TODO
