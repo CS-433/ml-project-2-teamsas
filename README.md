@@ -2,6 +2,8 @@
 
 EPFL CS-433: Machine Learning @ Fall 2024
 
+For detailed explanations, please proceed to the [project report]().
+
 ## Project Description
 
 TODO
