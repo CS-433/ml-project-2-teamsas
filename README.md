@@ -4,7 +4,7 @@ EPFL CS-433: Machine Learning @ Fall 2024
 
 ## Project Description
 
-
+TODO
 
 ## Project Structure
 
@@ -16,11 +16,11 @@ TODO
 
 ## Dependencies
 
-
+TODO
 
 ## How to Run
 
-
+TODO
 
 ## Statement on Data Confidentiality
 
