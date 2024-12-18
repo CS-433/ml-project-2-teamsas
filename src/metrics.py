@@ -17,6 +17,35 @@ DEFAULT_MY_PERSONALITY_THRESHOLDS = np.array(
 )
 
 
+def get_threshold_for_target(target_name: str) -> np.array:
+    """
+    Get the threshold for a specific target.
+
+    Parameters
+    ----------
+    target_name : str
+        The name of the target variable.
+
+    Returns
+    -------
+    np.array
+        The threshold for the target variable.
+    """
+    if target_name == "sEXT":
+        thr = DEFAULT_MY_PERSONALITY_THRESHOLDS[0]
+    elif target_name == "sNEU":
+        thr = DEFAULT_MY_PERSONALITY_THRESHOLDS[1]
+    elif target_name == "sAGR":
+        thr = DEFAULT_MY_PERSONALITY_THRESHOLDS[2]
+    elif target_name == "sCON":
+        thr = DEFAULT_MY_PERSONALITY_THRESHOLDS[3]
+    elif target_name == "sOPN":
+        thr = DEFAULT_MY_PERSONALITY_THRESHOLDS[4]
+    else:
+        raise ValueError(f"Invalid target name: {target_name}")
+    return np.array([thr])
+
+
 def measure_performance(
     y_true: np.array,
     y_pred: np.array,
