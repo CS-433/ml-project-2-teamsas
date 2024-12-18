@@ -42,6 +42,10 @@ def measure_performance(
     """
     assert y_true.shape == y_pred.shape
 
+    if len(y_true.shape) == 1:
+        y_true = y_true.reshape(-1, 1)
+        y_pred = y_pred.reshape(-1, 1)
+
     mae_per_target = mean_absolute_error(y_true, y_pred, multioutput="raw_values")
     rmse_per_target = root_mean_squared_error(y_true, y_pred, multioutput="raw_values")
     mean_mae = np.mean(mae_per_target)
