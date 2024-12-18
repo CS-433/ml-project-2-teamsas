@@ -24,7 +24,7 @@ def get_inputs_chunked_data(datapath_features, datapath_targets, features, datap
         return X_train_cleaned, y_train
     
     if features == 'embeddings':
-        data = np.load(datapath_features)
+        data = np.load(datapath_features2)
         cls_embeddings = pd.DataFrame(data['cls_embeddings'])
         y_train = pd.read_csv(datapath_targets)
         y_train.drop(columns= "Unnamed: 0", inplace = True)
@@ -73,7 +73,7 @@ def get_inputs_data(datapath_features, datapath_targets, features, datapath_feat
     
 
     if features == 'embeddings':
-        data = np.load(datapath_features)
+        data = np.load(datapath_features2)
         cls_embeddings = pd.DataFrame(data['cls_embeddings'])
         y_train = pd.read_csv(datapath_targets)
         y_train.drop(columns= "Unnamed: 0", inplace = True)
@@ -111,7 +111,7 @@ def get_inputs_my_personality(datapath_features, datapath_targets, features, dat
         return X_train, y_train
     
     if features == 'embeddings':
-        data = np.load(datapath_features)
+        data = np.load(datapath_features2)
         cls_embeddings = pd.DataFrame(data['cls_embeddings'])
         y_train = pd.read_csv(datapath_targets)
 
