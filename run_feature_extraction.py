@@ -1,18 +1,20 @@
 import argparse
-from feature_extraction import (
-    creating_my_personality_data,
-    creating_idiap_data,
-    creating_idiap_chunked_data,
+from src.feature_extraction import (
     saving_NRC_data,
     saving_NRC_VAD_data,
     saving_LIWC_data,
     saving_readability_data,
     Saving_aggregated_features,
 )
+from src.data_loader import(
+    creating_my_personality_data,
+    creating_idiap_data,
+    creating_idiap_chunked_data,
+)
 from pathlib import Path
 
 
-def feature_extraction(
+def run_feature_extraction(
     type,
     datapath,
     NRC_path,
@@ -142,7 +144,6 @@ def main() -> None:
         "--NRC_path",
         type=Path,
         help="Path to the NRC lexicon",
-        required=True,
         default="./lib_/NRC-Emotion-Lexicon.xlsx",
     )
     parser.add_argument(
@@ -155,7 +156,6 @@ def main() -> None:
         "--NRC_VAD_PATH",
         type=Path,
         help="Path to the NRC VAD lexicon",
-        required=True,
         default="./lib_/NRC-VAD-Lexicon.txt",
     )
     parser.add_argument(
@@ -191,7 +191,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    feature_extraction(
+    run_feature_extraction(
         type=args.type,
         datapath=args.datapath,
         NRC_path=args.NRC_path,

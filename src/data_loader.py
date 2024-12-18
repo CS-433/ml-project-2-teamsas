@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
-from transformations import my_personality_target_normalization, idiap_target_normalization
+from src.transformations import my_personality_target_normalization, idiap_target_normalization
 
 def get_inputs_chunked_data(datapath_features, datapath_targets, features, datapath_features2 = None):
 

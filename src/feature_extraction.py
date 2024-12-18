@@ -9,7 +9,7 @@ from nltk.stem import WordNetLemmatizer
 from collections import Counter
 import readability
 from empath import Empath
-from transformations import normalization_readability 
+from src.transformations import normalization_readability 
 
 def get_wordnet_pos(word):
     
