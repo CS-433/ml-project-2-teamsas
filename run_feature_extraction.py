@@ -143,6 +143,7 @@ def main() -> None:
         type=Path,
         help="Path to the NRC lexicon",
         required=True,
+        default="./lib_/NRC-Emotion-Lexicon.xlsx",
     )
     parser.add_argument(
         "--output_path_NRC",
@@ -155,6 +156,7 @@ def main() -> None:
         type=Path,
         help="Path to the NRC VAD lexicon",
         required=True,
+        default="./lib_/NRC-VAD-Lexicon.txt",
     )
     parser.add_argument(
         "--output_path_NRC_VAD",
