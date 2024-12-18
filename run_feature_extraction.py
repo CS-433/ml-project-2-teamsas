@@ -1,7 +1,7 @@
 from feature_extraction import creating_my_personality_data, creating_idiap_data, creating_idiap_chunked_data, saving_NRC_data,\
 saving_NRC_VAD_data, saving_LIWC_data, saving_readability_data, Saving_aggregated_features 
 
-def feature_extraction(type, datapath, NRC_path, output_path_NRC, NRC_VAD_PATH, output_path_NRC_VAD, output_path_readability, output_path_LIWC, output_path, targret_path):
+def run_feature_extraction(type, datapath, NRC_path, output_path_NRC, NRC_VAD_PATH, output_path_NRC_VAD, output_path_readability, output_path_LIWC, output_path, targret_path):
         
         if type  == 'my_personality':
             X_my_personality, y_my_personality = creating_my_personality_data(datapath=datapath)
