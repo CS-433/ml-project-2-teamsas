@@ -1,9 +1,9 @@
-from data_loader import (
+from src.data_loader import (
     get_inputs_my_personality,
     get_inputs_data,
     get_inputs_chunked_data,
 )
-from learning import Regression_LGB
+from src.learning import Regression_LGB
 import argparse
 from pathlib import Path
 
@@ -86,11 +86,11 @@ def main() -> None:
     args = parser.parse_args()
     run_light_gbm(
         type=args.type,
-        datapath_features=Path(args.datapath_features),
-        datapath_targets=Path(args.datapath_targets),
+        datapath_features=args.datapath_features,
+        datapath_targets=args.datapath_targets,
         target=args.target,
         features=args.features,
-        datapath_features2=Path(args.datapath_features2),
+        datapath_features2=args.datapath_features2,
     )
 
 

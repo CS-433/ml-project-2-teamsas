@@ -1,12 +1,11 @@
-from data_loader import (
+from src.data_loader import (
     get_inputs_my_personality,
     get_inputs_data,
     get_inputs_chunked_data,
 )
-from learning import Regression_SVR
+from src.learning import Regression_SVR
 import argparse
 from pathlib import Path
-
 
 def run_svr(
     type, datapath_features, datapath_targets, target, features, datapath_features2=None

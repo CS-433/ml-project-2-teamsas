@@ -4,6 +4,8 @@ import warnings
 warnings.filterwarnings("ignore")
 from sklearn.svm import SVR
 import lightgbm as lgb
+from src.metrics import measure_performance, get_threshold_for_target
+
 
 def training_SVR(X, y, test_size, param_grid, target):
 
@@ -26,10 +28,12 @@ def training_SVR(X, y, test_size, param_grid, target):
     print("Best MAE score:", best_mae)
     print("Standard Deviation of MAE:", best_std_score)
     y_pred = grid_search.predict(X_test)
-    rmse = root_mean_squared_error(y_test[target], y_pred)
-    mae = mean_absolute_error(y_test[target], y_pred)
-    print("RMSE:", rmse)
-    print("MAE:", mae)
+    #rmse = root_mean_squared_error(y_test[target], y_pred)
+    #mae = mean_absolute_error(y_test[target], y_pred)
+    #print("RMSE:", rmse)
+    #print("MAE:", mae)
+    results = measure_performance(y_true = y_test[target].to_numpy(), y_pred = y_pred, use_classification_metrics = True, thresholds_for_classification = get_threshold_for_target(target))
+    print(results)
 
 def Regression_SVR(X, y, type, target, features):
 
@@ -136,10 +140,13 @@ def training_LGB(X, y, test_size, param_grid, target):
     print("Best MAE score:", best_mae)
     print("Standard Deviation of MAE:", best_std_score)
     y_pred = grid_search.predict(X_test)
-    rmse = root_mean_squared_error(y_test[target], y_pred)
-    mae = mean_absolute_error(y_test[target], y_pred)
-    print("RMSE:", rmse)
-    print("MAE:", mae)
+    #rmse = root_mean_squared_error(y_test[target], y_pred)
+    #mae = mean_absolute_error(y_test[target], y_pred)
+    #print("RMSE:", rmse)
+    #print("MAE:", mae)
+    results = measure_performance(y_true = y_test[target].to_numpy(), y_pred = y_pred, use_classification_metrics = True, thresholds_for_classification = get_threshold_for_target(target))
+    print(results)
+    
 
 def Regression_LGB(X, y, type, target, features):
     if type == 'my_personality' and features == 'psycological':
