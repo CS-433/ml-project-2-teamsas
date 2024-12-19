@@ -8,6 +8,22 @@ from src.metrics import measure_performance, get_threshold_for_target
 
 
 def training_SVR(X, y, test_size, param_grid, target):
+    """
+    Train a Support Vector Regressor model using GridSearchCV and measure its performance.
+    
+    Parameters
+    ----------
+    X : pd.DataFrame
+        The features of the dataset.
+    y : pd.DataFrame
+        The target variable of the dataset.
+    test_size : float
+        The size of the test set.
+    param_grid : dict
+        The hyperparameters to search for.
+    target : str
+        The target variable.
+    """
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
     svr = SVR()
@@ -36,6 +52,22 @@ def training_SVR(X, y, test_size, param_grid, target):
     print(results)
 
 def Regression_SVR(X, y, type, target, features):
+    """
+    Train a Support Vector Regressor model using GridSearchCV and measure its performance.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        The features of the dataset.
+    y : pd.DataFrame
+        The target variable of the dataset.
+    type : str
+        The type of dataset.
+    target : str
+        The target variable.
+    features : str
+        The type of features to use
+    """
 
     if type == 'my_personality' and features == 'psycological':
         print(f"results for SVR method on my_personality dataset with {target} target and psycological features:")
@@ -120,6 +152,23 @@ def Regression_SVR(X, y, type, target, features):
         training_SVR(X, y, 0.1, param_grid, target)   
     
 def training_LGB(X, y, test_size, param_grid, target):
+    """
+    Train a LightGBM Regressor model using GridSearchCV and measure its performance.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        The features of the dataset.
+
+    y : pd.DataFrame
+        The target variable of the dataset.
+
+    test_size : float
+        The size of the test set.
+
+    param_grid : dict
+        The hyperparameters to search for.
+    """
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
     mae_scorer = make_scorer(mean_absolute_error, greater_is_better=False)
@@ -149,6 +198,26 @@ def training_LGB(X, y, test_size, param_grid, target):
     
 
 def Regression_LGB(X, y, type, target, features):
+    """
+    Train a LightGBM Regressor model using GridSearchCV and measure its performance.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        The features of the dataset.
+
+    y : pd.DataFrame
+        The target variable of the dataset.
+
+    type : str
+        The type of dataset.
+
+    target : str
+        The target variable.
+
+    features : str
+        The type of features to use
+    """
     if type == 'my_personality' and features == 'psycological':
         print(f"results for LGB method on my_personality dataset with {target} target and psycological features:")
         param_grid = {

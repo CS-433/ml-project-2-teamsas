@@ -1,4 +1,15 @@
 class EarlyStopping:
+    """
+    Early stops the training if validation loss doesn't improve after a given patience.
+
+    Args:
+        patience (int): How long to wait after last time validation loss improved.
+            Default: 10
+        delta (float): Minimum change in the monitored quantity to qualify as an improvement.
+            Default: 0
+        verbose (bool): If True, prints a message for each validation loss improvement. Default
+            False.
+    """
     def __init__(self, patience=10, delta=0, verbose=False):
         self.patience = patience
         self.delta = delta

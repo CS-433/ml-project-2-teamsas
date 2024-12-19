@@ -12,6 +12,14 @@ from empath import Empath
 from src.transformations import normalization_readability 
 
 def get_wordnet_pos(word):
+    """
+    Map POS tag to first character lemmatize() accepts
+    
+    Parameters
+    ----------
+    word : str
+        The word to be lemmatized.
+    """
     
     tag = nltk.pos_tag([word])[0][1][0].upper()
     tag_dict = {
@@ -23,6 +31,17 @@ def get_wordnet_pos(word):
     return tag_dict.get(tag, wordnet.NOUN)
 
 def extract_NRC_features(x, NRC_df):
+    """
+    Extracts the NRC emotion features from a given text.
+    
+    Parameters
+    
+    x : str
+        The text to extract the features from.
+        
+    NRC_df : pd.DataFrame
+        The NRC emotion lexicon.
+    """
     
     stop_words = set(stopwords.words('english'))
     punctuation = set(string.punctuation)
@@ -49,6 +68,17 @@ def extract_NRC_features(x, NRC_df):
     return result
 
 def extract_NRC_VAD_features(x, NRC_df):
+    """
+    Extracts the NRC VAD emotion features from a given text.
+
+    Parameters
+
+    x : str
+        The text to extract the features from.
+
+    NRC_df : pd.DataFrame
+        The NRC VAD emotion lexicon.
+    """
     
     stop_words = set(stopwords.words('english'))
     punctuation = set(string.punctuation)
@@ -75,6 +105,19 @@ def extract_NRC_VAD_features(x, NRC_df):
     return result
 
 def extract_readability_features(text):
+    """
+    Extracts the readability features from a given text.
+    
+    Parameters
+    
+    text : str
+        The text to extract the features from.
+        
+    Returns
+    -------
+    pd.Series
+        The extracted readability features.
+    """
     
     try:
         features = dict(readability.getmeasures(text, lang="en"))
@@ -101,7 +144,19 @@ def extract_readability_features(text):
         return pd.Series(new_row)
 
 def exraxt_more_emotion_features(text):
+    """
+    Extracts the LIWC features from a given text.
 
+    Parameters
+    ----------
+    text : str
+        The text to extract the features from.
+    
+    Returns
+    -------
+    pd.Series
+        The extracted LIWC features.
+    """
     lexicon = Empath()
     analysis = lexicon.analyze(text, normalize=True)
     desired_keys = ["warmth","emotional","sympathy","love","confusion", "cheerfulness", "aggression", "nervousness", "ridicule", "royalty", "optimism"]
@@ -110,7 +165,24 @@ def exraxt_more_emotion_features(text):
     return pd.Series(subset)
 
 def saving_NRC_data(NRC_path, X, output_path, type):
+    """
+    Saves the NRC features extracted from the given text data.
 
+    Parameters
+    ----------
+
+    NRC_path : str
+        The path to the NRC emotion lexicon.
+
+    X : pd.DataFrame
+        The text data.
+
+    output_path : str
+        The path to save the extracted features.
+
+    type : str
+        The type of the data. It can be either 'my_personality', 'idiap', or 'idiap_chunked'.
+    """
     NRC_df = pd.read_excel(NRC_path, index_col=0)    
     if type == 'my_personality':
         features = X["STATUS"].apply(lambda x: extract_NRC_features(x, NRC_df))
@@ -125,7 +197,24 @@ def saving_NRC_data(NRC_path, X, output_path, type):
 
 
 def saving_NRC_VAD_data(NRC_path, X, output_path, type):
+    """
+    Saves the NRC VAD features extracted from the given text data.
 
+    Parameters
+    ----------
+
+    NRC_path : str
+        The path to the NRC VAD emotion lexicon.
+
+    X : pd.DataFrame
+        The text data.
+
+    output_path : str
+        The path to save the extracted features.
+
+    type : str
+        The type of the data. It can be either 'my_personality', 'idiap', or 'idiap_chunked'.
+    """
     NRC_df = pd.read_csv(NRC_path, index_col=["Word"], sep="\t")
     if type == 'my_personality':
         features = X["STATUS"].apply(lambda x: extract_NRC_VAD_features(x, NRC_df))
@@ -138,7 +227,20 @@ def saving_NRC_VAD_data(NRC_path, X, output_path, type):
 
 
 def saving_readability_data(X, output_path, type):
+    """
+    Saves the readability features extracted from the given text data.
 
+    Parameters
+
+    X : pd.DataFrame
+        The text data.
+
+    output_path : str
+        The path to save the extracted features.
+
+    type : str
+        The type of the data. It can be either 'my_personality', 'idiap', or 'idiap_chunked'.
+    """
     if type == 'my_personality':
         features = X["STATUS"].apply(lambda x: extract_readability_features(x))
     if type == 'idiap':

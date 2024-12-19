@@ -4,6 +4,19 @@ import torch.nn.functional as F
 
 
 class TextModel(nn.Module):
+    """
+    A simple text classification model with a GRU layer.
+
+    Args:
+        vocab_size (int): The size of the vocabulary.
+        embedding_dim (int): The dimension of the word embeddings.
+        embedding_matrix (np.ndarray): A matrix of shape (vocab_size, embedding_dim)
+            containing the pre-trained word embeddings.
+        num_units (int): The number of units in the GRU layer.
+        num_layers (int): The number of layers in the GRU layer.
+        dropout (float): The dropout rate.
+        num_classes (int): The number of classes in the classification task.
+    """
     def __init__(
         self,
         vocab_size,
@@ -43,6 +56,20 @@ class TextModel(nn.Module):
 
 
 class TextModelWithSideInfo(nn.Module):
+    """
+    A text classification model with side information.
+
+    Args:
+        vocab_size (int): The size of the vocabulary.
+        embedding_dim (int): The dimension of the word embeddings.
+        embedding_matrix (np.ndarray): A matrix of shape (vocab_size, embedding_dim)
+            containing the pre-trained word embeddings.
+        num_units (int): The number of units in the GRU layer.
+        num_layers (int): The number of layers in the GRU layer.
+        dropout (float): The dropout rate.
+        side_info_dim (int): The dimension of the side information.
+        num_classes (int): The number of classes in the classification task.
+    """
     def __init__(
         self,
         vocab_size,
