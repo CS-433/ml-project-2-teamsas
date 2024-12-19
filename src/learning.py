@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split, GridSearchCV, KFold
-from sklearn.metrics import root_mean_squared_error, make_scorer, mean_absolute_error, r2_score
+from sklearn.metrics import make_scorer, mean_absolute_error
 import warnings
 warnings.filterwarnings("ignore")
 from sklearn.svm import SVR
