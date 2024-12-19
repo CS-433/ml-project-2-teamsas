@@ -2,6 +2,8 @@
 
 Aryan Ahadinia, Saba Nasiri, Shahrzad Javidi
 
+Intelligence and personality have always been considered two important dimensions for characterizing an individual. Recent advancements in Natural Language Processing methods have initiated an interdisciplinary field of research aimed at inferring these variables. This report explores the possibility of inferring such variables. In this project, the goal is to investigate this potential using a new dataset (IDIAP). Our studies shed light on the possibility of accurately inferring intelligence and, to some extent, personality.
+
 ## How to Run?
 
 ### Chunking
