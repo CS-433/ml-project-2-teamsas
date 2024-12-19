@@ -1,115 +1,233 @@
-from typing import Dict, List, Optional
-from pathlib import Path
+from sklearn.model_selection import train_test_split, GridSearchCV, KFold
+from sklearn.metrics import make_scorer, mean_absolute_error
+import warnings
+warnings.filterwarnings("ignore")
+from sklearn.svm import SVR
+import lightgbm as lgb
+from src.metrics import measure_performance, get_threshold_for_target
 
-import torch
-import torch.nn as nn
-from tqdm import tqdm
 
+def training_SVR(X, y, test_size, param_grid, target):
 
-class Trainer(object):
-    def __init__(
-        self,
-        model: nn.Module,
-        optimizer: torch.optim.Optimizer,
-        criterion: torch.nn.Module,
-        train_loader: torch.utils.data.DataLoader,
-        val_loader: torch.utils.data.DataLoader,
-        num_epochs: int,
-        early_stopping_monitor: Optional[str],
-        early_stopping_patience: Optional[int],
-        best_model_path: Optional[Path],
-        checkpoint_path: Optional[Path],
-        checkpoint_frequency: Optional[int],
-        device: torch.device,
-    ) -> None:
-        self.model = model
-        self.optimizer = optimizer
-        self.criterion = criterion
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+    svr = SVR()
+    cv = KFold(n_splits=5, shuffle=True, random_state=42)
+    scorer = make_scorer(mean_absolute_error, greater_is_better = False)
+    grid_search = GridSearchCV(
+        estimator=svr,
+        param_grid=param_grid,
+        scoring=scorer,
+        cv=cv,
+        )
+    grid_search.fit(X_train, y_train[target])
+    best_index = grid_search.best_index_
+    best_mean_score = grid_search.cv_results_['mean_test_score'][best_index]
+    best_std_score = grid_search.cv_results_['std_test_score'][best_index]
+    best_mae = -best_mean_score
+    print("Best Parameters:", grid_search.best_params_)
+    print("Best MAE score:", best_mae)
+    print("Standard Deviation of MAE:", best_std_score)
+    y_pred = grid_search.predict(X_test)
+    #rmse = root_mean_squared_error(y_test[target], y_pred)
+    #mae = mean_absolute_error(y_test[target], y_pred)
+    #print("RMSE:", rmse)
+    #print("MAE:", mae)
+    results = measure_performance(y_true = y_test[target].to_numpy(), y_pred = y_pred, use_classification_metrics = True, thresholds_for_classification = get_threshold_for_target(target))
+    print(results)
 
-        self.train_loader = train_loader
-        self.val_loader = val_loader
+def Regression_SVR(X, y, type, target, features):
 
-        self.num_epochs = num_epochs
+    if type == 'my_personality' and features == 'psycological':
+        print(f"results for SVR method on my_personality dataset with {target} target and psycological features:")
+        param_grid = {
+        'C': [0.001, 0.01, 0.1],
+        'epsilon': [0.000001, 0.00001, 0.0001, 0.001],
+        'kernel': ['poly', 'rbf']
+    }
+        training_SVR(X, y, 0.2, param_grid, target)    
 
-        self.early_stopping_monitor = early_stopping_monitor
-        self.early_stopping_patience = early_stopping_patience
+    if type == 'my_personality' and features == 'embeddings':
+        print(f"results for SVR method on my personality dataset with {target} target and Embeddings as features:")
+        param_grid = {
+        'C': [0.001, 0.01],
+        'epsilon': [0.0001, 0.001],
+        'kernel': ['rbf']
+    }
+        training_SVR(X, y, 0.2, param_grid, target)   
+    
+    if type == 'my_personality' and features == 'combined':
+        print(f"results for SVR method on my personality dataset with {target} target and both psycological features and embeddings as features:")
+        param_grid = {
+        'C': [0.001, 0.01],
+        'epsilon': [0.0001, 0.001],
+        'kernel': ['rbf']
+    }
+        training_SVR(X, y, 0.2, param_grid, target)   
+        
+    if type == 'idiap' and features == 'psycological':
+        print(f"results for SVR method on idiap dataset with {target} target and psycological features:")   
+        param_grid = {
+        'C': [0.001, 0.01, 0.1],
+        'epsilon': [0.000001, 0.00001, 0.0001, 0.001],
+        'kernel': ['poly', 'rbf']
+    }
+        training_SVR(X, y, 0.1, param_grid, target)   
+    
+       
+    if type == 'idiap' and features == 'embeddings':
+        print(f"results for SVR method on idiap dataset with {target} target and Embeddings as features:")    
+        param_grid = {
+        'C': [0.001, 0.01, 0.1],
+        'epsilon': [0.000001, 0.00001, 0.0001, 0.001],
+        'kernel': ['poly', 'rbf']
+    }
+        training_SVR(X, y, 0.1, param_grid, target)   
+    
+    if type == 'idiap' and features == 'combined':
+        print(f"results for SVR method on idiap dataset with {target} target and both psycological features and embeddings as features:")
+        param_grid = {
+        'C': [0.001, 0.01, 0.1],
+        'epsilon': [0.000001, 0.00001, 0.0001, 0.001],
+        'kernel': ['poly', 'rbf']
+    }
+        training_SVR(X, y, 0.1, param_grid, target)   
+    
+    if type == 'idiap_chunked' and features == 'psycological':
+        print(f"results for SVR method on idiap chunked dataset with {target} target and psycological features:")
+        param_grid = {
+        'C': [0.001, 0.01, 0.1],
+        'epsilon': [0.000001, 0.00001, 0.0001, 0.001],
+        'kernel': ['poly', 'rbf']
+    }
+        training_SVR(X, y, 0.1, param_grid, target)   
+    
+    if type == 'idiap_chunked' and features == 'embeddings':
+        print(f"results for SVR method on idiap chunked dataset with {target} target and Embedding features:")
+        param_grid = {
+        'C': [0.001, 0.01],
+        'epsilon': [0.0001, 0.001],
+        'kernel': ['rbf']
+    }
+        training_SVR(X, y, 0.1, param_grid, target)   
+    
+    if type == 'idiap_chunked' and features == 'combined':
+        print(f"results for SVR method on idiap chunked dataset with {target} target and both psycological features and embeddings as features:")
+        param_grid = {
+        'C': [0.001, 0.01],
+        'epsilon': [0.0001, 0.001],
+        'kernel': ['rbf']
+    }
+        training_SVR(X, y, 0.1, param_grid, target)   
+    
+def training_LGB(X, y, test_size, param_grid, target):
 
-        self.best_model_path = best_model_path
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+    mae_scorer = make_scorer(mean_absolute_error, greater_is_better=False)
+    model = lgb.LGBMRegressor(random_state=42, verbose = -1, metric='mae' , bagging_fraction=0.8, bagging_freq=1)
+    cv = KFold(n_splits=5, shuffle=True, random_state=42)
+    grid_search = GridSearchCV(
+        estimator=model,
+        param_grid=param_grid,
+        scoring=mae_scorer,
+        cv=cv,
+        )
+    grid_search.fit(X_train, y_train[target])
+    best_index = grid_search.best_index_
+    best_mean_score = grid_search.cv_results_['mean_test_score'][best_index]
+    best_std_score = grid_search.cv_results_['std_test_score'][best_index]
+    best_mae = -best_mean_score
+    print("Best Parameters:", grid_search.best_params_)
+    print("Best MAE score:", best_mae)
+    print("Standard Deviation of MAE:", best_std_score)
+    y_pred = grid_search.predict(X_test)
+    #rmse = root_mean_squared_error(y_test[target], y_pred)
+    #mae = mean_absolute_error(y_test[target], y_pred)
+    #print("RMSE:", rmse)
+    #print("MAE:", mae)
+    results = measure_performance(y_true = y_test[target].to_numpy(), y_pred = y_pred, use_classification_metrics = True, thresholds_for_classification = get_threshold_for_target(target))
+    print(results)
+    
 
-        self.checkpoint_path = checkpoint_path
-        self.checkpoint_frequency = checkpoint_frequency
-
-        self.device = device
-
-    def _train_epoch(self):
-        model = self.model.train()
-        for data, target in tqdm(self.train_loader, leave=False):
-            data, target = data, target.to(self.device)
-            self.optimizer.zero_grad()
-            output = model(data)
-            loss = self.criterion(output, target)
-            loss.backward()
-            self.optimizer.step()
-
-    def _validate_epoch(self, data_loader) -> Dict[str, float]:
-        model = self.model.eval()
-        sum_abs_error = 0
-        sum_squared_error = 0
-        num_samples = 0
-        with torch.no_grad():
-            for data, target in tqdm(data_loader, leave=False):
-                data, target = data, target.to(self.device)
-                output = model(data)
-                sum_abs_error += torch.sum(torch.abs(output - target)).item()
-                sum_squared_error += torch.sum((output - target) ** 2).item()
-                num_samples += len(target)
-        return {
-            "mae": sum_abs_error / num_samples,
-            "mse": sum_squared_error / num_samples,
-            "rmse": (sum_squared_error / num_samples) ** 0.5,
+def Regression_LGB(X, y, type, target, features):
+    if type == 'my_personality' and features == 'psycological':
+        print(f"results for LGB method on my_personality dataset with {target} target and psycological features:")
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70, 80, 90]
         }
+        training_LGB(X, y, 0.2, param_grid, target)
 
-    def _compile_hist(self, history) -> Dict[str, List[float]]:
-        return {
-            metric: [measurement[metric] for measurement in history]
-            for metric in history[0].keys()
+    if type == 'my_personality' and features == 'embeddings':
+        print(f"results for LGB method on my_personality dataset with {target} target and embedding features:")
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70]
         }
+        training_LGB(X, y, 0.2, param_grid, target)
 
-    def _save_model(self, path: Path) -> None:
-        torch.save(self.model.state_dict(), path)
-
-    def _load_model(self, path: Path) -> None:
-        self.model.load_state_dict(torch.load(path))
-
-    def train(self):
-        train_hist = []
-        val_hist = []
-
-        best_measurement = float("inf")
-        best_epoch = 0
-
-        with tqdm(range(self.num_epochs)) as pbar:
-            for epoch in pbar:
-                self._train_epoch()
-                train_metrics = self._validate_epoch(self.train_loader)
-                val_metrics = self._validate_epoch(self.val_loader)
-                train_hist.append(train_metrics)
-                val_hist.append(val_metrics)
-                pbar.set_postfix(
-                    {
-                        "train_mae": train_metrics["mae"],
-                        "val_mae": val_metrics["mae"],
-                    }
-                )
-                measurement = val_metrics[self.early_stopping_monitor]
-                if measurement < best_measurement:
-                    self._save_model(self.best_model_path)
-                    best_measurement = measurement
-                    best_epoch = epoch
-                if epoch - best_epoch > self.early_stopping_patience:
-                    break
-                if self.checkpoint_path is not None:
-                    if epoch % self.checkpoint_frequency == 0:
-                        self._save_model(self.checkpoint_path)
-        self._load_model(self.best_model_path)
-        return self._compile_hist(train_hist), self._compile_hist(val_hist)
+    if type == 'my_personality' and features == 'combined':
+        print(f"results for LGB method on my_personality dataset with {target} target and psycological features and embeddings features:")
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70]
+        }
+        training_LGB(X, y, 0.2, param_grid, target)
+        
+    if type == 'idiap' and features == 'psycological':
+        print(f"results for LGB method on idiap dataset with {target} target and psycological features:")
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70, 80, 90]
+        }
+        training_LGB(X, y, 0.1, param_grid, target)
+        
+    if type == 'idiap' and features == 'embeddings':
+        print(f"results for LGB method on idiap dataset with {target} target and embedding features:")   
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70]
+        }
+        training_LGB(X, y, 0.1, param_grid, target)
+        
+    if type == 'idiap' and features == 'combined':
+        print(f"results for LGB method on idiap dataset with {target} target and psycological features and embeddings features:")
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70]
+        }
+        training_LGB(X, y, 0.1, param_grid, target)
+        
+    if type == 'idiap_chunked' and features == 'psycological':
+        print(f"results for LGB method on idiap chunked dataset with {target} target and psycological features:")
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70, 80, 90]
+        }
+        training_LGB(X, y, 0.1, param_grid, target)
+        
+    if type == 'idiap_chunked' and features == 'embeddings':
+        print(f"results for LGB method on idiap chunked dataset with {target} target and embedding features:")   
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70]
+        }
+        training_LGB(X, y, 0.1, param_grid, target)
+        
+    if type == 'idiap_chunked' and features == 'combined':
+        print(f"results for LGB method on idiap chunked dataset with {target} target and psycological features and embeddings features:")
+        param_grid = {
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda_l1' : [0.001, 0.01, 0.1],
+        'features_fraction' : [70]
+        }
+        training_LGB(X, y, 0.1, param_grid, target)
+        
+             

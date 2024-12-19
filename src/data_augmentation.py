@@ -10,14 +10,12 @@ import nltk
 from nltk import pos_tag
 from nltk.corpus import brown
 from nltk.corpus import reuters
-from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 from nltk.tokenize import sent_tokenize
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 import torch
 from tqdm import tqdm
-from transformers import BertTokenizer, BertForMaskedLM
 from transformers import MarianMTModel, MarianTokenizer
 from transformers import logging
 
