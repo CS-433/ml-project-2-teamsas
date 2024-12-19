@@ -13,3 +13,7 @@ keras
 optuna
 ray
 ray[tune]
+matplotlib
+seaborn
+black
+isort
